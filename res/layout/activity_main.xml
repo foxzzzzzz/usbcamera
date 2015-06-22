@@ -101,6 +101,17 @@
             android:layout_height="90dp"
             android:paddingBottom="60dp"
           	android:rotation="270" />
+		<TextView
+            android:id="@+id/textView_VolumeValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="100dp"
+            android:layout_marginTop="120dp"
+            android:text="0"
+            android:textColor="@color/WHITE"
+            android:textSize="@android:dimen/app_icon_size" />
        	<CheckBox
             android:id="@+id/checkBox_Sound"
             android:layout_width="wrap_content"
@@ -129,7 +140,20 @@
             android:layout_width="120dp"
             android:layout_height="90dp"
             android:paddingBottom="60dp"
-          	android:rotation="270" />
+          	android:rotation="270"
+       		 />
+         
+         <TextView
+             android:id="@+id/textView_SensitivityValue"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
+             android:layout_alignParentTop="true"
+             android:layout_marginLeft="250dp"
+             android:layout_marginTop="120dp"
+             android:text="0"
+             android:textColor="@color/WHITE"
+             android:textSize="@android:dimen/app_icon_size" />
 		
         <CheckBox
             android:id="@+id/checkBox_Sensitivity"

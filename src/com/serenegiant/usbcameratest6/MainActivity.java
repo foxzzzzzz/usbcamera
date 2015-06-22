@@ -28,6 +28,7 @@ import java.io.File;
 import android.app.Activity;
 import android.graphics.SurfaceTexture;
 import android.hardware.usb.UsbDevice;
+import android.media.AudioManager;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
@@ -43,6 +44,8 @@ import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -79,6 +82,12 @@ public final class MainActivity extends Activity {
 	private CheckBox mSensitivityCheckBox;
 	private SeekBar mVolumeSeekBar;
 	private SeekBar mSensitivitySeekBar;
+	private TextView mTextViewVolumeValue;
+	private TextView mTextViewSensitivityValue;
+	
+	private AudioManager mAudioManager ;
+    private int mVolumeMax;
+    private int mCurrentVolume;
 	/**
 	 * button for start/stop recording
 	 */
@@ -104,15 +113,36 @@ public final class MainActivity extends Activity {
 		mSoundOnCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
 		mSensitivityCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
 		
+		
+		
+		mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+		mVolumeMax = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+		mCurrentVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		
 		mVolumeSeekBar = (SeekBar)findViewById(R.id.seekBar_Volume);
 		mSensitivitySeekBar = (SeekBar)findViewById(R.id.seekBar_Sensitivity);
 		
+		mVolumeSeekBar.setMax(mVolumeMax);
+		mVolumeSeekBar.setProgress(mCurrentVolume);
+		mVolumeSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+		mSensitivitySeekBar.setMax(9);
+		mSensitivitySeekBar.setProgress(5);
+		mSensitivitySeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+		mTextViewVolumeValue = (TextView)findViewById(R.id.textView_VolumeValue);
+		mTextViewSensitivityValue = (TextView)findViewById(R.id.textView_SensitivityValue);
+		
+		mTextViewVolumeValue.setText(String.valueOf(mVolumeSeekBar.getProgress()));
+		mTextViewSensitivityValue.setText(String.valueOf(mSensitivitySeekBar.getProgress()));
 		
 		mUVCCameraViewL = (UVCCameraTextureView)findViewById(R.id.camera_view_L);
 		mUVCCameraViewL.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera.DEFAULT_PREVIEW_HEIGHT);
 		mUVCCameraViewL.setSurfaceTextureListener(mSurfaceTextureListener);
 		mUVCCameraViewL.setOnLongClickListener(mOnLongClickListener);
 
+		
+		
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 		mHandler = UVCCameraHandler.createHandler(this);
 	}
@@ -153,6 +183,38 @@ public final class MainActivity extends Activity {
         mCaptureButton = null;
 		super.onDestroy();
 	}
+	
+	private final SeekBar.OnSeekBarChangeListener mOnSeekBarChangeListener = new OnSeekBarChangeListener() {
+		
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,boolean fromUser) {
+			switch(seekBar.getId())
+			{
+			case R.id.seekBar_Volume:
+				mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
+                        progress, 0);
+				mTextViewVolumeValue.setText(String.valueOf(progress));
+				break;
+			case R.id.seekBar_Sensitivity:
+				mTextViewSensitivityValue.setText(String.valueOf(progress));
+				break;
+			}
+			// TODO Auto-generated method stub
+			
+		}
+	};
 	
 	private final CompoundButton.OnCheckedChangeListener mOnCheckBoxCheckedListener = new CompoundButton.OnCheckedChangeListener() {
 		
