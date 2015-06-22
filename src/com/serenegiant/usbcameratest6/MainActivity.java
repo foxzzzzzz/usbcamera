@@ -37,7 +37,10 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
+import android.widget.RadioGroup;
+import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -70,6 +73,8 @@ public final class MainActivity extends Activity {
 	 * for open&start / stop&close camera preview
 	 */
 	private ToggleButton mCameraButton;
+	private CheckBox mSoundOnCheckBox;
+	private CheckBox mSensitivityCheckBox;
 	/**
 	 * button for start/stop recording
 	 */
@@ -86,6 +91,12 @@ public final class MainActivity extends Activity {
 		mCaptureButton.setOnClickListener(mOnClickListener);
 		mCaptureButton.setVisibility(View.INVISIBLE);
 
+		mSoundOnCheckBox = (CheckBox)findViewById(R.id.checkBox_Sound);
+		mSensitivityCheckBox = (CheckBox)findViewById(R.id.checkBox_Sensitivity);
+		
+		mSoundOnCheckBox.setChecked(true);
+		mSensitivityCheckBox.setChecked(true);
+		
 		mUVCCameraViewL = (UVCCameraTextureView)findViewById(R.id.camera_view_L);
 		mUVCCameraViewL.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera.DEFAULT_PREVIEW_HEIGHT);
 		mUVCCameraViewL.setSurfaceTextureListener(mSurfaceTextureListener);
@@ -131,7 +142,16 @@ public final class MainActivity extends Activity {
         mCaptureButton = null;
 		super.onDestroy();
 	}
-
+	
+	private final OnCheckedChangeListener mOnCheckedChangeListener =  new OnCheckedChangeListener() {
+		
+		@Override
+		public void onCheckedChanged(RadioGroup group, int checkedId) {
+			// TODO Auto-generated method stub
+			
+		}
+	};
+	
 	/**
 	 * event handler when click camera / capture button
 	 */
