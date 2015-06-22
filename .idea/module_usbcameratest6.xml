@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_usbcameratest6" default="compile.module.usbcameratest6">
+  <dirname property="module.usbcameratest6.basedir" file="${ant.file.module_usbcameratest6}"/>
+  
+  <property name="module.jdk.home.usbcameratest6" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.usbcameratest6" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.usbcameratest6" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.usbcameratest6" value="-encoding UTF-8 -source 1.6 ${compiler.args}"/>
+  
+  <property name="usbcameratest6.output.dir" value="undefined"/>
+  <property name="usbcameratest6.testoutput.dir" value="undefined"/>
+  
+  <path id="usbcameratest6.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="usbcameratest6.module.production.classpath"/>
+  
+  <path id="usbcameratest6.runtime.production.module.classpath"/>
+  
+  <path id="usbcameratest6.module.classpath"/>
+  
+  <path id="usbcameratest6.runtime.module.classpath"/>
+  
+  
+  <patternset id="excluded.from.module.usbcameratest6">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.usbcameratest6">
+    <patternset refid="excluded.from.module.usbcameratest6"/>
+  </patternset>
+  
+  
+  <target name="compile.module.usbcameratest6" depends="compile.module.usbcameratest6.production,compile.module.usbcameratest6.tests" description="Compile module USBCameraTest6"/>
+  
+  <target name="compile.module.usbcameratest6.production" depends="register.custom.compilers" description="Compile module USBCameraTest6; production classes"/>
+  
+  <target name="compile.module.usbcameratest6.tests" depends="register.custom.compilers,compile.module.usbcameratest6.production" description="compile module USBCameraTest6; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.usbcameratest6" description="cleanup module">
+    <delete dir="${usbcameratest6.output.dir}"/>
+    <delete dir="${usbcameratest6.testoutput.dir}"/>
+  </target>
+</project>
