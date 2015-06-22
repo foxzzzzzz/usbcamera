@@ -38,9 +38,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
+import android.widget.SeekBar;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -75,6 +77,8 @@ public final class MainActivity extends Activity {
 	private ToggleButton mCameraButton;
 	private CheckBox mSoundOnCheckBox;
 	private CheckBox mSensitivityCheckBox;
+	private SeekBar mVolumeSeekBar;
+	private SeekBar mSensitivitySeekBar;
 	/**
 	 * button for start/stop recording
 	 */
@@ -93,9 +97,16 @@ public final class MainActivity extends Activity {
 
 		mSoundOnCheckBox = (CheckBox)findViewById(R.id.checkBox_Sound);
 		mSensitivityCheckBox = (CheckBox)findViewById(R.id.checkBox_Sensitivity);
-		
+
 		mSoundOnCheckBox.setChecked(true);
 		mSensitivityCheckBox.setChecked(true);
+		
+		mSoundOnCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
+		mSensitivityCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
+		
+		mVolumeSeekBar = (SeekBar)findViewById(R.id.seekBar_Volume);
+		mSensitivitySeekBar = (SeekBar)findViewById(R.id.seekBar_Sensitivity);
+		
 		
 		mUVCCameraViewL = (UVCCameraTextureView)findViewById(R.id.camera_view_L);
 		mUVCCameraViewL.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera.DEFAULT_PREVIEW_HEIGHT);
@@ -143,15 +154,38 @@ public final class MainActivity extends Activity {
 		super.onDestroy();
 	}
 	
-	private final OnCheckedChangeListener mOnCheckedChangeListener =  new OnCheckedChangeListener() {
+	private final CompoundButton.OnCheckedChangeListener mOnCheckBoxCheckedListener = new CompoundButton.OnCheckedChangeListener() {
 		
 		@Override
-		public void onCheckedChanged(RadioGroup group, int checkedId) {
+		public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+			switch ( buttonView.getId()) {
+			
+			case R.id.checkBox_Sound:
+				if( isChecked == true )
+				{
+					mVolumeSeekBar.setEnabled(true);
+				}
+				else
+				{
+					mVolumeSeekBar.setEnabled(false);
+				}
+				break;
+			case R.id.checkBox_Sensitivity:
+				if( isChecked == true )
+				{
+					mSensitivitySeekBar.setEnabled(true);
+				}
+				else
+				{
+					mSensitivitySeekBar.setEnabled(false);
+				}
+				break;
+			}
 			// TODO Auto-generated method stub
 			
 		}
 	};
-	
 	/**
 	 * event handler when click camera / capture button
 	 */
