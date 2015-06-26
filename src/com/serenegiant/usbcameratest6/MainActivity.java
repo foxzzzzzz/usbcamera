@@ -26,6 +26,7 @@ package com.serenegiant.usbcameratest6;
 import java.io.File;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.usb.UsbDevice;
 import android.media.AudioManager;
@@ -48,6 +49,10 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.location.LocationProvider;
 
 import com.serenegiant.encoder.MediaMuxerWrapper;
 import com.serenegiant.usb.USBMonitor;
@@ -84,7 +89,7 @@ public final class MainActivity extends Activity {
 	private SeekBar mSensitivitySeekBar;
 	private TextView mTextViewVolumeValue;
 	private TextView mTextViewSensitivityValue;
-	
+	private  LocationManager mLocationManager;
 	private AudioManager mAudioManager ;
     private int mVolumeMax;
     private int mCurrentVolume;
@@ -135,6 +140,7 @@ public final class MainActivity extends Activity {
 		
 		mTextViewVolumeValue.setText(String.valueOf(mVolumeSeekBar.getProgress()));
 		mTextViewSensitivityValue.setText(String.valueOf(mSensitivitySeekBar.getProgress()));
+
 		
 		mUVCCameraViewL = (UVCCameraTextureView)findViewById(R.id.camera_view_L);
 		mUVCCameraViewL.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera.DEFAULT_PREVIEW_HEIGHT);
@@ -145,6 +151,8 @@ public final class MainActivity extends Activity {
 		
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 		mHandler = UVCCameraHandler.createHandler(this);
+		 mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+		StartLocationService() ;
 	}
 
 	@Override
@@ -183,7 +191,7 @@ public final class MainActivity extends Activity {
         mCaptureButton = null;
 		super.onDestroy();
 	}
-	
+
 	private final SeekBar.OnSeekBarChangeListener mOnSeekBarChangeListener = new OnSeekBarChangeListener() {
 		
 		@Override
@@ -388,4 +396,49 @@ public final class MainActivity extends Activity {
 			}
 
 	};
+	
+	private void StartLocationService() {
+
+	   
+		GPSListener gpsListener = new GPSListener();
+		long minTime = 2000;
+		float minDistance = 0;
+		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, gpsListener);
+		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();
+	}
+	
+	private class GPSListener implements LocationListener {
+		@Override
+		public void onLocationChanged(Location location) {
+			Double latitude = location.getLatitude();
+			Double longitude = location.getLongitude();
+			String msg = "Latitude :" + latitude + "\nLongitude: "+ longitude + "Speed:" + 
+					Float.toString(location.getSpeed()) +"hasspeed:" + location.hasSpeed();
+		    //do something
+			Log.i("GPSListener",msg);
+			Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();
+			
+		}
+
+
+		@Override
+		public void onProviderDisabled(String provider) {
+
+		    Log.i("===========================", "==============================");
+		    Log.i("onProviderDisabled", "==============================");
+		    Log.i("===========================", "==============================");
+		}
+		@Override
+		public void onProviderEnabled(String provider) {
+		    Log.i("===========================", "==============================");
+		    Log.i("onProviderEnabled", "==============================");
+		    Log.i("===========================", "==============================");
+
+		}
+		@Override
+		public void onStatusChanged(String provider, int status, Bundle extras) {
+		    // TODO Auto-generated method stub
+
+		}
+	}
 }

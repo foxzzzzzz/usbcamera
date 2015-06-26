@@ -88,7 +88,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_marginLeft="50dp"
+            android:layout_marginLeft="60dp"
             android:layout_marginTop="50dp"
             android:text="Volume"
             android:textColor="@color/WHITE" />
@@ -123,18 +123,18 @@
             android:text="Sound On"
             android:textColor="@color/WHITE" />
         <TextView
-            android:id="@+id/textView_Sensitivity"
+            android:id="@+id/textView_Speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_marginLeft="200dp"
+            android:layout_marginLeft="210dp"
             android:layout_marginTop="50dp"
-            android:text="Sensitivity"
+            android:text="Speed"
             android:textColor="@color/WHITE"  />
         
          <SeekBar
-            android:id="@+id/seekBar_Sensitivity"
+            android:id="@+id/seekBar_Speed"
             android:layout_marginTop="100dp"
             android:layout_marginLeft="200dp"
             android:layout_width="120dp"
@@ -144,7 +144,7 @@
        		 />
          
          <TextView
-             android:id="@+id/textView_SensitivityValue"
+             android:id="@+id/textView_SpeedValue"
              android:layout_width="wrap_content"
              android:layout_height="wrap_content"
              android:layout_alignParentLeft="true"
@@ -156,17 +156,47 @@
              android:textSize="@android:dimen/app_icon_size" />
 		
         <CheckBox
-            android:id="@+id/checkBox_Sensitivity"
+            android:id="@+id/checkBox_Speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
             android:layout_marginLeft="180dp"
             android:layout_marginTop="200dp"
-            android:text="Sensitivity"
+            android:text="Speed"
             android:textColor="@color/WHITE" />
        
-      
+         <SeekBar
+            android:id="@+id/seekBar_Sensitivity"
+            android:layout_marginTop="270dp"
+            android:layout_marginLeft="100dp"
+            android:layout_width="120dp"
+            android:layout_height="90dp"
+            android:paddingBottom="60dp"
+       		 />
+         
+         <TextView
+             android:id="@+id/textView_SensitivityValue"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
+             android:layout_alignParentTop="true"
+             android:layout_marginLeft="250dp"
+             android:layout_marginTop="265dp"
+             android:text="0"
+             android:textColor="@color/WHITE"
+             android:textSize="@android:dimen/app_icon_size" />
+		
+        <CheckBox
+            android:id="@+id/checkBox_Sensitivity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="100dp"
+            android:layout_marginTop="300dp"
+            android:text="Sensitivity"
+            android:textColor="@color/WHITE" />
 	  
      </RelativeLayout>
         
