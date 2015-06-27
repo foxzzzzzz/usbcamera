@@ -86,13 +86,19 @@ public final class MainActivity extends Activity {
 	private CheckBox mSoundOnCheckBox;
 	private CheckBox mSensitivityCheckBox;
 	private SeekBar mVolumeSeekBar;
+	private SeekBar mSpeedSeekBar;
 	private SeekBar mSensitivitySeekBar;
 	private TextView mTextViewVolumeValue;
 	private TextView mTextViewSensitivityValue;
-	private  LocationManager mLocationManager;
+	private TextView mTextViewSpeedValue;
+	private LocationManager mLocationManager;
+	private GPSListener mGpsListener;
+	private Location mGpsBeforeLocation;
+	private long mGpsStartTime = -1;
 	private AudioManager mAudioManager ;
     private int mVolumeMax;
     private int mCurrentVolume;
+    private int mWarningSpeedLimit;
 	/**
 	 * button for start/stop recording
 	 */
@@ -125,11 +131,17 @@ public final class MainActivity extends Activity {
 		mCurrentVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 		
 		mVolumeSeekBar = (SeekBar)findViewById(R.id.seekBar_Volume);
-		mSensitivitySeekBar = (SeekBar)findViewById(R.id.seekBar_Sensitivity);
+		mSensitivitySeekBar = (SeekBar)findViewById(R.id.seekBar_Sensitivity);		
+		mSpeedSeekBar = (SeekBar)findViewById(R.id.seekBar_Speed);
 		
 		mVolumeSeekBar.setMax(mVolumeMax);
 		mVolumeSeekBar.setProgress(mCurrentVolume);
 		mVolumeSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+		
+		mSpeedSeekBar.setMax(200);		
+		//mVolumeSeekBar.setProgress(mCurrentVolume);		
+		mSpeedSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
 		
 		mSensitivitySeekBar.setMax(9);
 		mSensitivitySeekBar.setProgress(5);
@@ -137,6 +149,7 @@ public final class MainActivity extends Activity {
 		
 		mTextViewVolumeValue = (TextView)findViewById(R.id.textView_VolumeValue);
 		mTextViewSensitivityValue = (TextView)findViewById(R.id.textView_SensitivityValue);
+		mTextViewSpeedValue = (TextView)findViewById(R.id.textView_SpeedValue);
 		
 		mTextViewVolumeValue.setText(String.valueOf(mVolumeSeekBar.getProgress()));
 		mTextViewSensitivityValue.setText(String.valueOf(mSensitivitySeekBar.getProgress()));
@@ -151,8 +164,18 @@ public final class MainActivity extends Activity {
 		
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 		mHandler = UVCCameraHandler.createHandler(this);
-		 mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-		StartLocationService() ;
+		mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+		
+		
+		mGpsListener = new GPSListener();
+		long minTime = 0;
+		float minDistance = 0;
+		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, mGpsListener);
+		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();
+		
+		
+		
+		//StartLocationService() ;
 	}
 
 	@Override
@@ -218,6 +241,13 @@ public final class MainActivity extends Activity {
 			case R.id.seekBar_Sensitivity:
 				mTextViewSensitivityValue.setText(String.valueOf(progress));
 				break;
+			
+			case R.id.seekBar_Speed:
+				mWarningSpeedLimit = progress ;//* 10;
+				mTextViewSpeedValue.setText(String.valueOf(mWarningSpeedLimit));
+				seekBar.setProgress(mWarningSpeedLimit);
+				break;
+			
 			}
 			// TODO Auto-generated method stub
 			
@@ -251,6 +281,16 @@ public final class MainActivity extends Activity {
 					mSensitivitySeekBar.setEnabled(false);
 				}
 				break;
+			case R.id.checkBox_Speed:
+				if( isChecked == true )
+				{
+					mSpeedSeekBar.setEnabled(true);
+				}
+				else
+				{
+					mSpeedSeekBar.setEnabled(false);
+				}
+				break;				
 			}
 			// TODO Auto-generated method stub
 			
@@ -401,23 +441,45 @@ public final class MainActivity extends Activity {
 
 	   
 		GPSListener gpsListener = new GPSListener();
-		long minTime = 2000;
-		float minDistance = 0;
+		long minTime = 1000;
+		float minDistance = 10;
 		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, gpsListener);
 		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();
+		
 	}
 	
 	private class GPSListener implements LocationListener {
 		@Override
 		public void onLocationChanged(Location location) {
+			float cur_speed = 0;
+			if (mGpsStartTime == -1)
+			{
+				mGpsBeforeLocation = location;
+				mGpsStartTime = location.getTime();
+			}
+			
+			
+			float distance[] = new float[1];
+			double curlatitude = location.getLatitude();
+			double curlongitude = location.getLongitude();
+			double belatitude = mGpsBeforeLocation.getLatitude();
+			double belongitude = mGpsBeforeLocation.getLongitude();
+						
+			
+			Location.distanceBetween(belatitude, belongitude, curlatitude, curlongitude, distance);
+			long delay = location.getTime() - mGpsStartTime;
+			double speed = distance[0]/delay;
+			double speedKMH = speed * 3600;
+			
 			Double latitude = location.getLatitude();
 			Double longitude = location.getLongitude();
 			String msg = "Latitude :" + latitude + "\nLongitude: "+ longitude + "Speed:" + 
-					Float.toString(location.getSpeed()) +"hasspeed:" + location.hasSpeed();
+					Float.toString(cur_speed) +"hasspeed:" + location.hasSpeed() + "calspeed:" + speed + "curkmhspeed:" + speedKMH;
+			
 		    //do something
 			Log.i("GPSListener",msg);
 			Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();
-			
+			mGpsBeforeLocation = location;
 		}
 
 
