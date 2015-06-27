@@ -176,7 +176,7 @@ public final class MainActivity extends Activity {
 		mSpeedCheckBox = (CheckBox)findViewById(R.id.checkBox_Speed);
 		mSpeedCheckBox.setChecked(true);
 		mSpeedCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);	
-		
+		mSpeedCheckBox.setVisibility(View.INVISIBLE);
 	}
 	
 	private void UI_Sensitivity_Init()
@@ -203,7 +203,10 @@ public final class MainActivity extends Activity {
 	}
 	
 	private void playSound(){
-		mSoundPool.play( mSound_Beep, 0.1f, 0.1f, 0, 0, 1);  
+		if( mSoundOnCheckBox.isChecked() == true )
+		{
+			mSoundPool.play( mSound_Beep, 0.1f, 0.1f, 0, 0, 1);
+		}
 	}
 	
 	@Override
@@ -293,10 +296,12 @@ public final class MainActivity extends Activity {
 				if( isChecked == true )
 				{
 					mVolumeSeekBar.setEnabled(true);
+					mSpeedSeekBar.setEnabled(true);
 				}
 				else
 				{
 					mVolumeSeekBar.setEnabled(false);
+					mSpeedSeekBar.setEnabled(false);
 				}
 				break;
 			case R.id.checkBox_Sensitivity:
