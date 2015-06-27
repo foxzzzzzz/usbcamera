@@ -31,6 +31,7 @@ import android.graphics.SurfaceTexture;
 import android.hardware.usb.UsbDevice;
 import android.media.AudioManager;
 import android.media.MediaScannerConnection;
+import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -83,22 +84,32 @@ public final class MainActivity extends Activity {
 	 * for open&start / stop&close camera preview
 	 */
 	private ToggleButton mCameraButton;
+	
 	private CheckBox mSoundOnCheckBox;
 	private CheckBox mSensitivityCheckBox;
+	private CheckBox mSpeedCheckBox;
+	
 	private SeekBar mVolumeSeekBar;
 	private SeekBar mSpeedSeekBar;
 	private SeekBar mSensitivitySeekBar;
+	
 	private TextView mTextViewVolumeValue;
 	private TextView mTextViewSensitivityValue;
 	private TextView mTextViewSpeedValue;
+	
 	private LocationManager mLocationManager;
 	private GPSListener mGpsListener;
 	private Location mGpsBeforeLocation;
 	private long mGpsStartTime = -1;
+	
 	private AudioManager mAudioManager ;
     private int mVolumeMax;
     private int mCurrentVolume;
     private int mWarningSpeedLimit;
+    
+	private SoundPool mSoundPool;
+	private int mSound_Beep;  
+	
 	/**
 	 * button for start/stop recording
 	 */
@@ -114,70 +125,87 @@ public final class MainActivity extends Activity {
 		mCaptureButton = (ImageButton)findViewById(R.id.capture_button);
 		mCaptureButton.setOnClickListener(mOnClickListener);
 		mCaptureButton.setVisibility(View.INVISIBLE);
-
-		mSoundOnCheckBox = (CheckBox)findViewById(R.id.checkBox_Sound);
-		mSensitivityCheckBox = (CheckBox)findViewById(R.id.checkBox_Sensitivity);
-
-		mSoundOnCheckBox.setChecked(true);
-		mSensitivityCheckBox.setChecked(true);
-		
-		mSoundOnCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
-		mSensitivityCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
-		
-		
-		
-		mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-		mVolumeMax = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-		mCurrentVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		
-		mVolumeSeekBar = (SeekBar)findViewById(R.id.seekBar_Volume);
-		mSensitivitySeekBar = (SeekBar)findViewById(R.id.seekBar_Sensitivity);		
-		mSpeedSeekBar = (SeekBar)findViewById(R.id.seekBar_Speed);
-		
-		mVolumeSeekBar.setMax(mVolumeMax);
-		mVolumeSeekBar.setProgress(mCurrentVolume);
-		mVolumeSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
-		
-		
-		mSpeedSeekBar.setMax(200);		
-		//mVolumeSeekBar.setProgress(mCurrentVolume);		
-		mSpeedSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
-		
-		mSensitivitySeekBar.setMax(9);
-		mSensitivitySeekBar.setProgress(5);
-		mSensitivitySeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
-		
-		mTextViewVolumeValue = (TextView)findViewById(R.id.textView_VolumeValue);
-		mTextViewSensitivityValue = (TextView)findViewById(R.id.textView_SensitivityValue);
-		mTextViewSpeedValue = (TextView)findViewById(R.id.textView_SpeedValue);
-		
-		mTextViewVolumeValue.setText(String.valueOf(mVolumeSeekBar.getProgress()));
-		mTextViewSensitivityValue.setText(String.valueOf(mSensitivitySeekBar.getProgress()));
-
 		
 		mUVCCameraViewL = (UVCCameraTextureView)findViewById(R.id.camera_view_L);
 		mUVCCameraViewL.setAspectRatio(UVCCamera.DEFAULT_PREVIEW_WIDTH / (float)UVCCamera.DEFAULT_PREVIEW_HEIGHT);
 		mUVCCameraViewL.setSurfaceTextureListener(mSurfaceTextureListener);
 		mUVCCameraViewL.setOnLongClickListener(mOnLongClickListener);
-
-		
 		
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 		mHandler = UVCCameraHandler.createHandler(this);
-		mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 		
-		
-		mGpsListener = new GPSListener();
-		long minTime = 0;
-		float minDistance = 0;
-		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, mGpsListener);
-		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();
-		
-		
-		
-		//StartLocationService() ;
+				
+		UI_Volume_Init();
+		UI_Speed_Init();
+		UI_Sensitivity_Init();
+		StartLocationService() ;
+		SoundPool_Init();
 	}
 
+	private void UI_Volume_Init()
+	{
+		mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+		mVolumeMax = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+		mCurrentVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+		
+		mVolumeSeekBar = (SeekBar)findViewById(R.id.seekBar_Volume);	
+		mVolumeSeekBar.setMax(mVolumeMax);
+		mVolumeSeekBar.setProgress(mCurrentVolume);
+		mVolumeSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+		mTextViewVolumeValue = (TextView)findViewById(R.id.textView_VolumeValue);	
+		mTextViewVolumeValue.setText(String.valueOf(mVolumeSeekBar.getProgress()));		
+	
+		mSoundOnCheckBox = (CheckBox)findViewById(R.id.checkBox_Sound);
+		mSoundOnCheckBox.setChecked(true);
+		mSoundOnCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);		
+	}
+	
+	private void UI_Speed_Init()
+	{
+		mWarningSpeedLimit = 50;
+		
+		mSpeedSeekBar = (SeekBar)findViewById(R.id.seekBar_Speed);		
+		mSpeedSeekBar.setMax(200);		
+		mSpeedSeekBar.setProgress(mWarningSpeedLimit);		
+		mSpeedSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+		mTextViewSpeedValue = (TextView)findViewById(R.id.textView_SpeedValue);		
+		mTextViewSpeedValue.setText(String.valueOf(mSpeedSeekBar.getProgress()));	
+		
+		mSpeedCheckBox = (CheckBox)findViewById(R.id.checkBox_Speed);
+		mSpeedCheckBox.setChecked(true);
+		mSpeedCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);	
+		
+	}
+	
+	private void UI_Sensitivity_Init()
+	{
+		mSensitivitySeekBar = (SeekBar)findViewById(R.id.seekBar_Sensitivity);		
+		mSensitivitySeekBar.setMax(9);
+		mSensitivitySeekBar.setProgress(5);
+		mSensitivitySeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+		mTextViewSensitivityValue = (TextView)findViewById(R.id.textView_SensitivityValue);
+		mTextViewSensitivityValue.setText(String.valueOf(mSensitivitySeekBar.getProgress()));
+		
+		mSensitivityCheckBox = (CheckBox)findViewById(R.id.checkBox_Sensitivity);
+		mSensitivityCheckBox.setChecked(true);
+		mSensitivityCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
+	
+	}
+
+
+	private void SoundPool_Init()
+	{
+		mSoundPool = new SoundPool(1, AudioManager.STREAM_MUSIC, 0 );
+		mSound_Beep = mSoundPool.load(this, R.raw.censor_beep, 1);  
+	}
+	
+	private void playSound(){
+		mSoundPool.play( mSound_Beep, 0.1f, 0.1f, 0, 0, 1);  
+	}
+	
 	@Override
 	public void onResume() {
 		super.onResume();
@@ -243,7 +271,7 @@ public final class MainActivity extends Activity {
 				break;
 			
 			case R.id.seekBar_Speed:
-				mWarningSpeedLimit = progress ;//* 10;
+				mWarningSpeedLimit = progress ;
 				mTextViewSpeedValue.setText(String.valueOf(mWarningSpeedLimit));
 				seekBar.setProgress(mWarningSpeedLimit);
 				break;
@@ -438,14 +466,12 @@ public final class MainActivity extends Activity {
 	};
 	
 	private void StartLocationService() {
-
-	   
-		GPSListener gpsListener = new GPSListener();
-		long minTime = 1000;
-		float minDistance = 10;
-		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, gpsListener);
-		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();
-		
+		mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+		mGpsListener = new GPSListener();
+		long minTime = 0;
+		float minDistance = 0;
+		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, mGpsListener);
+		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();		
 	}
 	
 	private class GPSListener implements LocationListener {
@@ -475,6 +501,12 @@ public final class MainActivity extends Activity {
 			Double longitude = location.getLongitude();
 			String msg = "Latitude :" + latitude + "\nLongitude: "+ longitude + "Speed:" + 
 					Float.toString(cur_speed) +"hasspeed:" + location.hasSpeed() + "calspeed:" + speed + "curkmhspeed:" + speedKMH;
+			
+			
+			if( speedKMH > mWarningSpeedLimit)
+			{
+				playSound();
+			}
 			
 		    //do something
 			Log.i("GPSListener",msg);
