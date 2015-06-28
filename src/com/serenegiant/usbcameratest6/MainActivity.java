@@ -27,6 +27,7 @@ import java.io.File;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.SurfaceTexture;
 import android.hardware.usb.UsbDevice;
 import android.media.AudioManager;
@@ -42,6 +43,7 @@ import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
@@ -97,6 +99,8 @@ public final class MainActivity extends Activity {
 	private TextView mTextViewSensitivityValue;
 	private TextView mTextViewSpeedValue;
 	
+	private EditText mEditText_Debug;
+	
 	private LocationManager mLocationManager;
 	private GPSListener mGpsListener;
 	private Location mGpsBeforeLocation;
@@ -109,6 +113,8 @@ public final class MainActivity extends Activity {
     
 	private SoundPool mSoundPool;
 	private int mSound_Beep;  
+	
+	private SharedPreferences mSavedSetting;
 	
 	/**
 	 * button for start/stop recording
@@ -134,12 +140,32 @@ public final class MainActivity extends Activity {
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 		mHandler = UVCCameraHandler.createHandler(this);
 		
-				
+
+		LoadSavedSettings();
 		UI_Volume_Init();
 		UI_Speed_Init();
-		UI_Sensitivity_Init();
+		UI_Sensitivity_Init();		
+		UI_EditText_Init();
 		StartLocationService() ;
 		SoundPool_Init();
+	}
+	
+	private void LoadSavedSettings()
+	{
+		mSavedSetting = getSharedPreferences("settings", 0);
+		mWarningSpeedLimit = mSavedSetting.getInt("speedlimit", 0);
+	}
+	
+	private void SaveSettings()
+	{
+		SharedPreferences.Editor ed = mSavedSetting.edit();
+		ed.putInt("speedlimit", mWarningSpeedLimit);
+		ed.commit();
+	}
+	
+	private void UI_EditText_Init()
+	{
+		mEditText_Debug = (EditText)findViewById(R.id.editText_Debug);
 	}
 
 	private void UI_Volume_Init()
@@ -163,7 +189,7 @@ public final class MainActivity extends Activity {
 	
 	private void UI_Speed_Init()
 	{
-		mWarningSpeedLimit = 50;
+		//mWarningSpeedLimit = 50;
 		
 		mSpeedSeekBar = (SeekBar)findViewById(R.id.seekBar_Speed);		
 		mSpeedSeekBar.setMax(200);		
@@ -230,6 +256,9 @@ public final class MainActivity extends Activity {
 
 	@Override
 	public void onDestroy() {
+		
+		SaveSettings();
+		
 		if (DEBUG) Log.v(TAG, "onDestroy:");
         if (mHandler != null) {
 	        mHandler.release();
@@ -473,8 +502,8 @@ public final class MainActivity extends Activity {
 	private void StartLocationService() {
 		mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 		mGpsListener = new GPSListener();
-		long minTime = 0;
-		float minDistance = 0;
+		long minTime = 2000;
+		float minDistance = 5;
 		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, mGpsListener);
 		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();		
 	}
@@ -513,9 +542,14 @@ public final class MainActivity extends Activity {
 				playSound();
 			}
 			
+			String num = String.format("%.1f km/h\r\n", speedKMH);
+			
 		    //do something
 			Log.i("GPSListener",msg);
-			Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();
+			mEditText_Debug.append(num);
+			
+			
+			//Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();
 			mGpsBeforeLocation = location;
 		}
 
