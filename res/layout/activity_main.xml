@@ -60,9 +60,8 @@
                 android:layout_alignLeft="@+id/camera_view_L"
                 android:layout_alignRight="@+id/camera_view_L"
                 android:layout_alignTop="@+id/camera_view_L"
+                android:background="@color/WHITE"
                 android:src="@drawable/border" />
-
-
 
         </RelativeLayout>
 
@@ -81,7 +80,8 @@
         android:id="@+id/RelativeLayout_UI"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_weight="1" >
+        android:layout_weight="1"
+        android:background="@color/WHITE" >
 
         <TextView
             android:id="@+id/textView_Volume"
@@ -90,7 +90,7 @@
             android:layout_above="@+id/checkBox_Sound"
             android:layout_alignLeft="@+id/textView_Speed"
             android:text="Volume"
-            android:textColor="@color/WHITE" />
+            android:textColor="@color/BLACK" />
         
         <CheckBox
             android:id="@+id/checkBox_Sound"
@@ -99,7 +99,7 @@
             android:layout_alignTop="@+id/seekBar_Volume"
             android:layout_toLeftOf="@+id/seekBar_Volume"
             android:text="Mute"
-            android:textColor="@color/WHITE" />
+            android:textColor="@color/BLACK" />
         
          <EditText
             android:id="@+id/editText_Debug"
@@ -116,7 +116,7 @@
              android:layout_alignLeft="@+id/checkBox_Sound"
              android:layout_centerVertical="true"
              android:text="10Km/h"
-             android:textColor="@color/WHITE" />
+             android:textColor="@color/BLACK" />
 
          <TextView
              android:id="@+id/textView_Speed"
@@ -125,7 +125,7 @@
              android:layout_above="@+id/checkBox_Speed"
              android:layout_alignLeft="@+id/TextView_Sensitivity"
              android:text="Speed"
-             android:textColor="@color/WHITE" />
+             android:textColor="@color/BLACK" />
 
          <SeekBar
              android:id="@+id/seekBar_Volume"
@@ -143,7 +143,7 @@
              android:layout_alignLeft="@+id/checkBox_Speed"
              android:layout_marginBottom="55dp"
              android:text="Sensitivity"
-             android:textColor="@color/WHITE" />
+             android:textColor="@color/BLACK" />
 
          <SeekBar
              android:id="@+id/seekBar_Speed"
@@ -166,7 +166,7 @@
              android:layout_below="@+id/checkBox_Speed"
              android:layout_toRightOf="@+id/textView_Volume"
              android:text="0"
-             android:textColor="@color/WHITE"
+             android:textColor="@color/BLACK"
              android:textSize="@android:dimen/app_icon_size" />
                  
     </RelativeLayout>
