@@ -33,6 +33,13 @@
 #define MAX_FRAME 4
 #define PREVIEW_PIXEL_BYTES 4	// RGBA/RGBX
 
+
+#ifdef PROBED_DSMS
+static int setSleepDuration;
+
+VUEMATE_DATA *vuemateInformation;
+#endif
+
 UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 :	mPreviewWindow(NULL),
 	mCaptureWindow(NULL),
@@ -49,6 +56,9 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 	previewFormat(WINDOW_FORMAT_RGBA_8888),
 	mIsRunning(false),
 	mIsCapturing(false),
+#ifdef PROBED_DSMS
+	mIsDsms(false),
+#endif
 	captureQueu(NULL),
 	mFrameCallbackObj(NULL),
 	mFrameCallbackFunc(NULL),
@@ -58,6 +68,11 @@ UVCPreview::UVCPreview(uvc_device_handle_t *devh)
 	pthread_cond_init(&preview_sync, NULL);
 	pthread_mutex_init(&preview_mutex, NULL);
 //
+#ifdef PROBED_DSMS
+	pthread_cond_init(&dsms_sync, NULL);
+	pthread_mutex_init(&dsms_mutex, NULL);
+
+#endif
 	pthread_cond_init(&capture_sync, NULL);
 	pthread_mutex_init(&capture_mutex, NULL);
 	EXIT();
@@ -78,6 +93,10 @@ UVCPreview::~UVCPreview() {
 	pthread_cond_destroy(&preview_sync);
 	pthread_mutex_destroy(&capture_mutex);
 	pthread_cond_destroy(&capture_sync);
+#ifdef PROBED_DSMS
+	pthread_mutex_destroy(&dsms_mutex);
+	pthread_cond_destroy(&dsms_sync);
+#endif
 	EXIT();
 }
 
@@ -119,9 +138,46 @@ int UVCPreview::setPreviewDisplay(ANativeWindow *preview_window) {
 	RETURN(0, int);
 }
 
-int UVCPreview::setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pixel_format) {
+int UVCPreview::setFrameCallback(JNIEnv *env, jobject frame_callback_obj) {
 	
 	ENTER();
+#ifdef PROBED_DSMS
+	pthread_mutex_lock(&dsms_mutex);
+	{
+		if (isRunning() && isDsmsDoing()) {
+			mIsDsms = false;
+			if (mFrameCallbackObj) {
+				pthread_cond_signal(&dsms_sync);
+				pthread_cond_wait(&dsms_sync, &dsms_mutex);	// wait finishing capturing
+			}
+		}
+		if (!env->IsSameObject(mFrameCallbackObj, frame_callback_obj))	{
+			iframecallback_fields.onDsms = NULL;
+			if (mFrameCallbackObj) {
+				env->DeleteGlobalRef(mFrameCallbackObj);
+			}
+			mFrameCallbackObj = frame_callback_obj;
+			if (frame_callback_obj) {
+				// get method IDs of Java object for callback
+				jclass clazz = env->GetObjectClass(frame_callback_obj);
+				if (LIKELY(clazz)) {
+					iframecallback_fields.onDsms = env->GetMethodID(clazz,
+						"onDsms",	"(Ljava/nio/ByteBuffer;)V");
+				} else {
+					LOGW("failed to get object class");
+				}
+				env->ExceptionClear();
+				if (!iframecallback_fields.onDsms) {
+					LOGE("Can't find IFrameCallback#onFrame");
+					env->DeleteGlobalRef(frame_callback_obj);
+					mFrameCallbackObj = frame_callback_obj = NULL;
+				}
+			}
+		}
+	}
+	pthread_mutex_unlock(&dsms_mutex);
+
+#else
 	pthread_mutex_lock(&capture_mutex);
 	{
 		if (isRunning() && isCapturing()) {
@@ -160,6 +216,8 @@ int UVCPreview::setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pi
 		}
 	}
 	pthread_mutex_unlock(&capture_mutex);
+
+#endif
 	RETURN(0, int);
 }
 
@@ -432,6 +490,9 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 
 	if (LIKELY(!result)) {
 		clearPreviewFrame();
+#ifdef PROBED_DSMS
+		pthread_create(&dsms_thread, NULL, dsms_thread_func, (void *)this);
+#endif		
 		pthread_create(&capture_thread, NULL, capture_thread_func, (void *)this);
 
 #if LOCAL_DEBUG
@@ -447,7 +508,7 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 					uvc_free_frame(frame_mjpeg);
 					if (LIKELY(!result)) {
 						frame = draw_preview_one(frame, &mPreviewWindow, uvc_any2rgbx, 4);
-						addCaptureFrame(frame);
+						//addCaptureFrame(frame);
 					} else {
 						uvc_free_frame(frame);
 					}
@@ -458,20 +519,21 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 			while (LIKELY(isRunning())) {
 				frame = waitPreviewFrame();
 				if (LIKELY(frame)) {
-#if 0 /* eyedea */
-					char testInfor[32];
-
-					memcpy(testInfor, frame->data, 32);
-					LOGE("[EYEDEA] InformationData[%s]", testInfor);
-					frame->data = frame->data+32;
-					frame->data_bytes = frame->data_bytes-32;
+#ifdef PROBED_DSMS /* eyedea */
+					vuemateInformation = (VUEMATE_DATA *)frame->data;
+#if 0					
+					LOGI("sleepDuration:%d", vuemateInformation->sleepDuration);
+					LOGI("sleepStatus:%d", vuemateInformation->sleepStatus);
+					LOGI("currentStatus:%d", vuemateInformation->currentStatus);
+					LOGI("sleepingTime:%d", vuemateInformation->sleepingTime);
+#endif					
 #endif					
 					frame = draw_preview_one(frame, &mPreviewWindow, uvc_any2rgbx, 4);
-					addCaptureFrame(frame);
+					addDsmsFrame(vuemateInformation);
 				}
 			}
 		}
-		pthread_cond_signal(&capture_sync);
+		pthread_cond_signal(&dsms_sync);
 #if LOCAL_DEBUG
 		LOGI("preview_thread_func:wait for all callbacks complete");
 #endif
@@ -485,6 +547,95 @@ void UVCPreview::do_preview(uvc_stream_ctrl_t *ctrl) {
 
 	EXIT();
 }
+
+#ifdef PROBED_DSMS
+inline const bool UVCPreview::isDsmsDoing() const { return mIsDsms; }
+
+void UVCPreview::addDsmsFrame(VUEMATE_DATA *frame) {
+	pthread_mutex_lock(&dsms_mutex);
+	if (LIKELY(isRunning())) {
+		// keep only latest one
+		
+		if (dsmsQueu) {
+			dsmsQueu = NULL;
+		}
+		dsmsQueu = frame;
+		pthread_cond_broadcast(&dsms_sync);
+	}
+	pthread_mutex_unlock(&dsms_mutex);
+}
+
+VUEMATE_DATA *UVCPreview::waitDsmsFrame() {
+	VUEMATE_DATA *frame = NULL;
+	pthread_mutex_lock(&dsms_mutex);
+	{
+		if (!dsmsQueu) {
+			pthread_cond_wait(&dsms_sync, &dsms_mutex);
+		}
+		if (LIKELY(isRunning() && dsmsQueu)) {
+			frame = dsmsQueu;
+			dsmsQueu = NULL;
+		}
+	}
+	pthread_mutex_unlock(&dsms_mutex);
+	return frame;
+}
+
+
+
+void *UVCPreview::dsms_thread_func(void *vptr_args) {
+	int result;
+
+	ENTER();
+	UVCPreview *preview = reinterpret_cast<UVCPreview *>(vptr_args);
+	if (LIKELY(preview)) {
+		JavaVM *vm = getVM();
+		JNIEnv *env;
+		// attach to JavaVM
+		vm->AttachCurrentThread(&env, NULL);
+		preview->do_dsms(env);	// never return until finish previewing
+		// detach from JavaVM
+		vm->DetachCurrentThread();
+		MARK("DetachCurrentThread");
+	}
+	PRE_EXIT();
+	pthread_exit(NULL);
+}
+
+void UVCPreview::do_dsms(JNIEnv *env) {
+	VUEMATE_DATA *frame = NULL;
+
+	ENTER();
+
+	for (; isRunning() ;) {
+		mIsDsms = true;
+		frame = waitDsmsFrame();
+		
+		do_dsms_callback(env, frame);
+
+		pthread_cond_broadcast(&dsms_sync);
+	}	// end of for (; isRunning() ;)
+	EXIT();
+}
+
+void UVCPreview::do_dsms_callback(JNIEnv *env, VUEMATE_DATA *frame) {
+	ENTER();
+
+	if (LIKELY(frame)) {
+		VUEMATE_DATA *callback_frame = frame;
+		if (mFrameCallbackObj) {
+			jobject buf = env->NewDirectByteBuffer(callback_frame, sizeof(struct _vuemate_information));
+			env->CallVoidMethod(mFrameCallbackObj, iframecallback_fields.onDsms, buf);
+			env->ExceptionClear();
+			env->DeleteLocalRef(buf);
+		}
+ SKIP:
+		callback_frame = NULL;
+	}
+	EXIT();
+}	
+
+#endif
 
 static void copyFrame(const uint8_t *src, uint8_t *dest, const int width, int height, const int stride_src, const int stride_dest) {
 	const int h8 = height % 8;

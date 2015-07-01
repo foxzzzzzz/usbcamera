@@ -144,9 +144,9 @@ public class UVCCamera {
      * @param callback
      * @param pixelFormat
      */
-    public void setFrameCallback(final IFrameCallback callback, final int pixelFormat) {
+    public void setFrameCallback(final IFrameCallback callback) {
     	if (mNativePtr != 0) {
-        	nativeSetFrameCallback(mNativePtr, callback, pixelFormat);
+        	nativeSetFrameCallback(mNativePtr, callback);
     	}
     }
 
@@ -163,7 +163,7 @@ public class UVCCamera {
      * stop preview
      */
     public void stopPreview() {
-    	setFrameCallback(null, 0);
+    	setFrameCallback(null);
     	if (mCtrlBlock != null) {
     		nativeStopPreview(mNativePtr);
     	}
@@ -208,7 +208,7 @@ public class UVCCamera {
     private static final native int nativeStartPreview(long id_camera);
     private static final native int nativeStopPreview(long id_camera);
     private static final native int nativeSetPreviewDisplay(long id_camera, Surface surface);
-    private static final native int nativeSetFrameCallback(long mNativePtr, IFrameCallback callback, int pixelFormat);
+    private static final native int nativeSetFrameCallback(long mNativePtr, IFrameCallback callback);
 
 //**********************************************************************
     /**

@@ -37,5 +37,6 @@ public interface IFrameCallback {
 	 * Some frames may drops if this method takes a time.
 	 * @param frame
 	 */
-	public void onFrame(ByteBuffer frame);
+	//public void onFrame(ByteBuffer frame);
+	public void onDsms(ByteBuffer frame);
 }

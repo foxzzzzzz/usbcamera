@@ -24,6 +24,7 @@ package com.serenegiant.usbcameratest6;
 */
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 
 import android.app.Activity;
 import android.content.Context;
@@ -34,6 +35,8 @@ import android.media.MediaScannerConnection;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
@@ -42,6 +45,7 @@ import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
@@ -59,6 +63,7 @@ import com.serenegiant.encoder.MediaMuxerWrapper;
 import com.serenegiant.usb.USBMonitor;
 import com.serenegiant.usb.USBMonitor.OnDeviceConnectListener;
 import com.serenegiant.usb.USBMonitor.UsbControlBlock;
+//import com.serenegiant.usb.UVCCameraHandler.CameraThread;
 import com.serenegiant.usb.UVCCamera;
 import com.serenegiant.usb.UVCCameraHandler;
 import com.serenegiant.widget.UVCCameraTextureView;
@@ -71,6 +76,8 @@ public final class MainActivity extends Activity {
 	 * for accessing USB
 	 */
 	private USBMonitor mUSBMonitor;
+	
+//	private final WeakReference<MsgThread> mWeakThread;
 	/**
 	 * Handler to execute camera releated methods sequentially on private thread
 	 */
@@ -79,23 +86,23 @@ public final class MainActivity extends Activity {
 	 * for camera preview display
 	 */
 	private UVCCameraTextureView mUVCCameraViewL;
-	private UVCCameraTextureView mUVCCameraViewR;
+//	private UVCCameraTextureView mUVCCameraViewR;
 	/**
 	 * for open&start / stop&close camera preview
 	 */
 	private ToggleButton mCameraButton;
 	
 	private CheckBox mSoundOnCheckBox;
-	private CheckBox mSensitivityCheckBox;
+//	private CheckBox mSensitivityCheckBox;
 	private CheckBox mSpeedCheckBox;
 	
 	private SeekBar mVolumeSeekBar;
 	private SeekBar mSpeedSeekBar;
 	private SeekBar mSensitivitySeekBar;
 	
-	private TextView mTextViewVolumeValue;
-	private TextView mTextViewSensitivityValue;
+
 	private TextView mTextViewSpeedValue;
+	private EditText mEditText_Debug;
 	
 	private LocationManager mLocationManager;
 	private GPSListener mGpsListener;
@@ -109,6 +116,8 @@ public final class MainActivity extends Activity {
     
 	private SoundPool mSoundPool;
 	private int mSound_Beep;  
+	
+	
 	
 	/**
 	 * button for start/stop recording
@@ -140,6 +149,12 @@ public final class MainActivity extends Activity {
 		UI_Sensitivity_Init();
 		StartLocationService() ;
 		SoundPool_Init();
+		UI_EditText_Init();
+	}
+	
+	private void UI_EditText_Init()
+	{
+		mEditText_Debug = (EditText)findViewById(R.id.editText_Debug);
 	}
 
 	private void UI_Volume_Init()
@@ -152,12 +167,9 @@ public final class MainActivity extends Activity {
 		mVolumeSeekBar.setMax(mVolumeMax);
 		mVolumeSeekBar.setProgress(mCurrentVolume);
 		mVolumeSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
-		
-		mTextViewVolumeValue = (TextView)findViewById(R.id.textView_VolumeValue);	
-		mTextViewVolumeValue.setText(String.valueOf(mVolumeSeekBar.getProgress()));		
 	
 		mSoundOnCheckBox = (CheckBox)findViewById(R.id.checkBox_Sound);
-		mSoundOnCheckBox.setChecked(true);
+		mSoundOnCheckBox.setChecked(false);  // normal non-mute
 		mSoundOnCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);		
 	}
 	
@@ -185,14 +197,6 @@ public final class MainActivity extends Activity {
 		mSensitivitySeekBar.setMax(9);
 		mSensitivitySeekBar.setProgress(5);
 		mSensitivitySeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
-		
-		mTextViewSensitivityValue = (TextView)findViewById(R.id.textView_SensitivityValue);
-		mTextViewSensitivityValue.setText(String.valueOf(mSensitivitySeekBar.getProgress()));
-		
-		mSensitivityCheckBox = (CheckBox)findViewById(R.id.checkBox_Sensitivity);
-		mSensitivityCheckBox.setChecked(true);
-		mSensitivityCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
-	
 	}
 
 
@@ -202,8 +206,8 @@ public final class MainActivity extends Activity {
 		mSound_Beep = mSoundPool.load(this, R.raw.censor_beep, 1);  
 	}
 	
-	private void playSound(){
-		if( mSoundOnCheckBox.isChecked() == true )
+	public void playSound(){
+		if( mSoundOnCheckBox.isChecked() == false )
 		{
 			mSoundPool.play( mSound_Beep, 0.1f, 0.1f, 0, 0, 1);
 		}
@@ -240,7 +244,7 @@ public final class MainActivity extends Activity {
 	        mUSBMonitor = null;
         }
         mUVCCameraViewL = null;
-        mUVCCameraViewR = null;
+//        mUVCCameraViewR = null;
         mCameraButton = null;
         mCaptureButton = null;
 		super.onDestroy();
@@ -267,10 +271,9 @@ public final class MainActivity extends Activity {
 			case R.id.seekBar_Volume:
 				mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
                         progress, 0);
-				mTextViewVolumeValue.setText(String.valueOf(progress));
+				playSound();
 				break;
 			case R.id.seekBar_Sensitivity:
-				mTextViewSensitivityValue.setText(String.valueOf(progress));
 				break;
 			
 			case R.id.seekBar_Speed:
@@ -295,23 +298,13 @@ public final class MainActivity extends Activity {
 			case R.id.checkBox_Sound:
 				if( isChecked == true )
 				{
-					mVolumeSeekBar.setEnabled(true);
-					mSpeedSeekBar.setEnabled(true);
-				}
-				else
-				{
 					mVolumeSeekBar.setEnabled(false);
 					mSpeedSeekBar.setEnabled(false);
 				}
-				break;
-			case R.id.checkBox_Sensitivity:
-				if( isChecked == true )
-				{
-					mSensitivitySeekBar.setEnabled(true);
-				}
 				else
 				{
-					mSensitivitySeekBar.setEnabled(false);
+					mVolumeSeekBar.setEnabled(true);
+					mSpeedSeekBar.setEnabled(true);
 				}
 				break;
 			case R.id.checkBox_Speed:
@@ -389,6 +382,7 @@ public final class MainActivity extends Activity {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				Toast.makeText(MainActivity.this, "vuemate2 Start", Toast.LENGTH_SHORT).show();
 				mCaptureButton.setVisibility(View.VISIBLE);
 			}
 		});
@@ -434,7 +428,30 @@ public final class MainActivity extends Activity {
 		public void onCancel() {
 		}
 	};
+/*
+    public void play_sound() {
+    	sendMessage(MSG_SOUND);
+    }
 
+	private static final int MSG_SOUND = 0;
+	
+
+	public void handleMessage(final Message msg) {
+		
+		Log.e(TAG, "handleMainMsg");
+		switch (msg.what) {
+		case MSG_SOUND:
+			playSound();
+			break;
+
+		default:
+			throw new RuntimeException("unsupported message:what=" + msg.what);
+		}
+	}    
+*/
+	public EditText getEditText() {
+		return mEditText_Debug;
+	}
 	/**
 	 * to access from CameraDialog
 	 * @return
@@ -473,8 +490,8 @@ public final class MainActivity extends Activity {
 	private void StartLocationService() {
 		mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 		mGpsListener = new GPSListener();
-		long minTime = 0;
-		float minDistance = 0;
+		long minTime = 2000;
+		float minDistance = 5;
 		mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, minTime, minDistance, mGpsListener);
 		Toast.makeText(getApplicationContext(),"gps has been started",Toast.LENGTH_SHORT).show();		
 	}
@@ -507,15 +524,21 @@ public final class MainActivity extends Activity {
 			String msg = "Latitude :" + latitude + "\nLongitude: "+ longitude + "Speed:" + 
 					Float.toString(cur_speed) +"hasspeed:" + location.hasSpeed() + "calspeed:" + speed + "curkmhspeed:" + speedKMH;
 			
+			mEditText_Debug.append(msg);
 			
 			if( speedKMH > mWarningSpeedLimit)
 			{
 				playSound();
 			}
 			
+			String num = String.format("%.1f km/h\r\n", speedKMH);
+			
 		    //do something
 			Log.i("GPSListener",msg);
-			Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();
+			mEditText_Debug.append(num);
+			
+			
+			//Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_SHORT).show();
 			mGpsBeforeLocation = location;
 		}
 
@@ -539,5 +562,54 @@ public final class MainActivity extends Activity {
 		    // TODO Auto-generated method stub
 
 		}
+	
 	}
+
+/*	
+	private static final class MsgThread extends Thread {
+		private static final String TAG_THREAD = "MsgThread";
+		private final Object mMsgSync = new Object();
+
+       private final WeakReference<Context> mWeakContext;
+
+		private MsgThread(final Context context) {
+			super("MsgThread");
+			if (DEBUG) Log.d(TAG_THREAD, "Constructor:");
+			mWeakContext = new WeakReference<Context>(context);
+
+		}
+
+		@Override
+		protected void finalize() throws Throwable {
+			Log.i(TAG_THREAD, "MsgThread#finalize");
+			super.finalize();
+		}
+
+		public UVCCameraHandler getHandler() {
+			if (DEBUG) Log.d(TAG_THREAD, "getHandler:");
+			synchronized (mMsgSync) {
+				if (mHandler == null)
+				try {
+					mMsgSync.wait();
+				} catch (final InterruptedException e) {
+				}
+			}
+			return mHandler;
+		}
+		@Override
+		public void run() {
+			if (DEBUG) Log.d(TAG_THREAD, "run:");
+			Looper.prepare();
+			synchronized (mMsgSync) {
+				mHandler = new UVCCameraHandler(this);
+				mMsgSync.notifyAll();
+			}
+			Looper.loop();
+			synchronized (mMsgSync) {
+
+			}
+			if (DEBUG) Log.d(TAG_THREAD, "run:finished");
+		}		
+	}
+*/	
 }

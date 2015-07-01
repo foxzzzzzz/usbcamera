@@ -26,6 +26,9 @@ package com.serenegiant.usb;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 
 import android.content.Context;
 import android.media.AudioManager;
@@ -37,6 +40,8 @@ import android.os.Message;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
@@ -45,6 +50,7 @@ import com.serenegiant.encoder.MediaSurfaceEncoder;
 import com.serenegiant.glutils.RendererHolder;
 import com.serenegiant.glutils.RendererHolder.OnFrameAvailableCallback;
 import com.serenegiant.usb.USBMonitor.UsbControlBlock;
+import com.serenegiant.usbcameratest6.MainActivity;
 import com.serenegiant.usbcameratest6.R;
 
 public final class UVCCameraHandler extends Handler {
@@ -173,6 +179,7 @@ public final class UVCCameraHandler extends Handler {
 		if (thread == null) return;
 		switch (msg.what) {
 		case MSG_OPEN:
+			Log.e(TAG, "MSG_OPEN");
 			thread.handleOpen((UsbControlBlock)msg.obj);
 			break;
 		case MSG_CLOSE:
@@ -213,10 +220,13 @@ public final class UVCCameraHandler extends Handler {
 		/**
 		 * shutter sound
 		 */
-		private SoundPool mSoundPool;
-		private int mSoundId;
+		private SoundPool mSoundPool, mSoundPool2;
+		private int mSoundId, mSoundId2;
 		private UVCCameraHandler mHandler;
 		private UsbControlBlock mCtrlBlock;
+		
+		private MainActivity mSound;
+		
 		/**
 		 * for accessing UVC camera
 		 */
@@ -232,6 +242,7 @@ public final class UVCCameraHandler extends Handler {
 			if (DEBUG) Log.d(TAG_THREAD, "Constructor:");
 			mWeakContext = new WeakReference<Context>(context);
 			loadSutterSound(context);
+			loadBeepSound(context);
 		}
 
 		@Override
@@ -307,9 +318,10 @@ public final class UVCCameraHandler extends Handler {
 				}
 			}
 			if (mUVCCamera == null) return;
-//			mUVCCamera.setFrameCallback(mIFrameCallback, UVCCamera.PIXEL_FORMAT_YUV);
+			mUVCCamera.setFrameCallback(mIFrameCallback);
 			mUVCCamera.setPreviewDisplay(surface);
 			mUVCCamera.startPreview();
+			//mEditText = mText.getEditText();
 		}
 
 		public void handleStopPreview() {
@@ -379,12 +391,37 @@ public final class UVCCameraHandler extends Handler {
 				Looper.myLooper().quit();
 		}
 
-/*		// if you need frame data as ByteBuffer on Java side, you can use this callback method with UVCCamera#setFrameCallback
+		// if you need frame data as ByteBuffer on Java side, you can use this callback method with UVCCamera#setFrameCallback
 		private final IFrameCallback mIFrameCallback = new IFrameCallback() {
 			@Override
+/*			
 			public void onFrame(final ByteBuffer frame) {
 			}
-		}; */
+*/			
+			public void onDsms(final ByteBuffer frame) {
+				
+				IntBuffer intBuffer = frame.order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
+				int[] buffer = new int[intBuffer.remaining()];
+				intBuffer.get(buffer);
+
+				Log.e(TAG, "onDsms_1:" + buffer[0]);
+				Log.e(TAG, "onDsms_2:" + buffer[1]);
+				Log.e(TAG, "onDsms_3:" + buffer[2]);
+				Log.e(TAG, "onDsms_4:" + buffer[3]);
+
+				String num = String.format("Sleep on!(%d)ms\r\n", buffer[3]);
+				
+				if ((buffer[0] == buffer[3]))
+					mSoundPool.play( mSoundId, 0.1f, 0.1f, 0, 0, 1);
+				else if ((buffer[1] < 0)||(buffer[2] < 0 ))
+					mSoundPool2.play( mSoundId2, 0.1f, 0.1f, 0, 0, 1);
+				
+				
+				//mEditText.append(num);
+				
+			}
+
+		};
 
 		private final OnFrameAvailableCallback mOnFrameAvailable = new OnFrameAvailableCallback() {
 			@Override
@@ -447,6 +484,30 @@ public final class UVCCameraHandler extends Handler {
 	        } catch (final Exception e) {
 	        	streamType = AudioManager.STREAM_SYSTEM;	// set appropriate according to your app policy
 	        }
+	        if (mSoundPool2 != null) {
+	        	try {
+	        		mSoundPool2.release();
+	        	} catch (final Exception e) {
+	        	}
+	        	mSoundPool2 = null;
+	        }
+	        // load shutter sound from resource
+		    mSoundPool2 = new SoundPool(2, streamType, 0);
+		    mSoundId2 = mSoundPool2.load(context, R.raw.camera_click, 1);
+		}
+		
+		@SuppressWarnings("deprecation")
+		private void loadBeepSound(final Context context) {
+			if (DEBUG) Log.d(TAG_THREAD, "loadBeepSound:");
+	    	// get system stream type using refrection
+	        int streamType;
+	        try {
+	            final Class<?> audioSystemClass = Class.forName("android.media.AudioSystem");
+	            final Field sseField = audioSystemClass.getDeclaredField("STREAM_SYSTEM_ENFORCED");
+	            streamType = sseField.getInt(null);
+	        } catch (final Exception e) {
+	        	streamType = AudioManager.STREAM_SYSTEM;	// set appropriate according to your app policy
+	        }
 	        if (mSoundPool != null) {
 	        	try {
 	        		mSoundPool.release();
@@ -455,9 +516,9 @@ public final class UVCCameraHandler extends Handler {
 	        	mSoundPool = null;
 	        }
 	        // load shutter sound from resource
-		    mSoundPool = new SoundPool(2, streamType, 0);
-		    mSoundId = mSoundPool.load(context, R.raw.camera_click, 1);
-		}
+		    mSoundPool = new SoundPool(1, streamType, 0 );
+		    mSoundId = mSoundPool.load(context, R.raw.censor_beep, 1);  
+		}		
 
 		@Override
 		public void run() {

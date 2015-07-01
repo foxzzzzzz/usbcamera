@@ -46,9 +46,23 @@ typedef uvc_error_t (*convFunc_t)(uvc_frame_t *in, uvc_frame_t *out);
 #define PIXEL_FORMAT_YUV20SP 4
 #define PIXEL_FORMAT_NV21 5		// YVU420SemiPlanar
 
+/* vuemate2 defined */
+#define PROBED_DSMS
+
+typedef struct _vuemate_information {
+	int sleepDuration;
+	int sleepStatus;
+	int currentStatus;
+	int sleepingTime;
+}VUEMATE_DATA;
+
 // for callback to Java object
 typedef struct {
+#ifdef PROBED_DSMS
+	jmethodID onDsms;
+#endif	
 	jmethodID onFrame;
+
 } Fields_iframecallback;
 
 class UVCPreview {
@@ -72,6 +86,13 @@ private:
 	pthread_t capture_thread;
 	pthread_mutex_t capture_mutex;
 	pthread_cond_t capture_sync;
+#ifdef PROBED_DSMS
+	volatile bool mIsDsms;
+	pthread_t dsms_thread;
+	pthread_mutex_t dsms_mutex;
+	pthread_cond_t dsms_sync;
+	VUEMATE_DATA *dsmsQueu;
+#endif
 	uvc_frame_t *captureQueu;			// keep latest frame
 	jobject mFrameCallbackObj;
 	convFunc_t mFrameCallbackFunc;
@@ -97,6 +118,13 @@ private:
 	void do_capture_surface(JNIEnv *env);
 	void do_capture_idle_loop(JNIEnv *env);
 	void do_capture_callback(JNIEnv *env, uvc_frame_t *frame);
+#ifdef PROBED_DSMS
+	void addDsmsFrame(VUEMATE_DATA *frame);
+	VUEMATE_DATA *waitDsmsFrame();
+	static void *dsms_thread_func(void *vptr_args);
+	void do_dsms(JNIEnv *env);
+	void do_dsms_callback(JNIEnv *env, VUEMATE_DATA *frame);
+#endif
 	void callbackPixelFormatChanged();
 public:
 	UVCPreview(uvc_device_handle_t *devh);
@@ -105,10 +133,13 @@ public:
 	inline const bool isRunning() const;
 	int setPreviewSize(int width, int height, int mode);
 	int setPreviewDisplay(ANativeWindow *preview_window);
-	int setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pixel_format);
+	int setFrameCallback(JNIEnv *env, jobject frame_callback_obj);
 	int startPreview();
 	int stopPreview();
 	inline const bool isCapturing() const;
+#ifdef PROBED_DSMS
+	inline const bool isDsmsDoing() const;
+#endif
 	int setCaptureDisplay(ANativeWindow *capture_window);
 };
 
