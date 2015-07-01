@@ -28,6 +28,7 @@ import java.lang.ref.WeakReference;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.SurfaceTexture;
 import android.hardware.usb.UsbDevice;
 import android.media.AudioManager;
@@ -117,7 +118,7 @@ public final class MainActivity extends Activity {
 	private SoundPool mSoundPool;
 	private int mSound_Beep;  
 	
-	
+	private SharedPreferences mSavedSetting;
 	
 	/**
 	 * button for start/stop recording
@@ -130,6 +131,7 @@ public final class MainActivity extends Activity {
 		if (DEBUG) Log.v(TAG, "onCreate:");
 		setContentView(R.layout.activity_main);
 		mCameraButton = (ToggleButton)findViewById(R.id.camera_button);
+		mCameraButton.bringToFront();
 		mCameraButton.setOnClickListener(mOnClickListener);
 		mCaptureButton = (ImageButton)findViewById(R.id.capture_button);
 		mCaptureButton.setOnClickListener(mOnClickListener);
@@ -143,19 +145,29 @@ public final class MainActivity extends Activity {
 		mUSBMonitor = new USBMonitor(this, mOnDeviceConnectListener);
 		mHandler = UVCCameraHandler.createHandler(this);
 		
-				
+
+		LoadSavedSettings();
 		UI_Volume_Init();
 		UI_Speed_Init();
 		UI_Sensitivity_Init();
 		StartLocationService() ;
 		SoundPool_Init();
-		UI_EditText_Init();
 	}
 	
-	private void UI_EditText_Init()
+	private void LoadSavedSettings()
 	{
-		mEditText_Debug = (EditText)findViewById(R.id.editText_Debug);
+		mSavedSetting = getSharedPreferences("settings", 0);
+		mWarningSpeedLimit = mSavedSetting.getInt("speedlimit", 0);
 	}
+	
+	private void SaveSettings()
+	{
+		SharedPreferences.Editor ed = mSavedSetting.edit();
+		ed.putInt("speedlimit", mWarningSpeedLimit);
+		ed.commit();
+	}
+	
+
 
 	private void UI_Volume_Init()
 	{
@@ -167,6 +179,9 @@ public final class MainActivity extends Activity {
 		mVolumeSeekBar.setMax(mVolumeMax);
 		mVolumeSeekBar.setProgress(mCurrentVolume);
 		mVolumeSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+//		mTextViewVolumeValue = (TextView)findViewById(R.id.textView_VolumeValue);	
+//		mTextViewVolumeValue.setText(String.valueOf(mVolumeSeekBar.getProgress()));		
 	
 		mSoundOnCheckBox = (CheckBox)findViewById(R.id.checkBox_Sound);
 		mSoundOnCheckBox.setChecked(false);  // normal non-mute
@@ -175,28 +190,34 @@ public final class MainActivity extends Activity {
 	
 	private void UI_Speed_Init()
 	{
-		mWarningSpeedLimit = 50;
-		
 		mSpeedSeekBar = (SeekBar)findViewById(R.id.seekBar_Speed);		
 		mSpeedSeekBar.setMax(200);		
 		mSpeedSeekBar.setProgress(mWarningSpeedLimit);		
 		mSpeedSeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
-		
+
 		mTextViewSpeedValue = (TextView)findViewById(R.id.textView_SpeedValue);		
 		mTextViewSpeedValue.setText(String.valueOf(mSpeedSeekBar.getProgress()));	
 		
 		mSpeedCheckBox = (CheckBox)findViewById(R.id.checkBox_Speed);
-		mSpeedCheckBox.setChecked(true);
+		mSpeedCheckBox.setChecked(false);
 		mSpeedCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);	
-		mSpeedCheckBox.setVisibility(View.INVISIBLE);
+
 	}
 	
 	private void UI_Sensitivity_Init()
 	{
 		mSensitivitySeekBar = (SeekBar)findViewById(R.id.seekBar_Sensitivity);		
-		mSensitivitySeekBar.setMax(9);
-		mSensitivitySeekBar.setProgress(5);
+		mSensitivitySeekBar.setMax(2);
+		mSensitivitySeekBar.setProgress(1);
 		mSensitivitySeekBar.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
+		
+//		mTextViewSensitivityValue = (TextView)findViewById(R.id.textView_SensitivityValue);
+//		mTextViewSensitivityValue.setText(String.valueOf(mSensitivitySeekBar.getProgress()));
+		
+//		mSensitivityCheckBox = (CheckBox)findViewById(R.id.checkBox_Sensitivity);
+//		mSensitivityCheckBox.setChecked(true);
+//		mSensitivityCheckBox.setOnCheckedChangeListener(mOnCheckBoxCheckedListener);
+	
 	}
 
 
@@ -234,6 +255,9 @@ public final class MainActivity extends Activity {
 
 	@Override
 	public void onDestroy() {
+		
+		SaveSettings();
+		
 		if (DEBUG) Log.v(TAG, "onDestroy:");
         if (mHandler != null) {
 	        mHandler.release();
@@ -250,6 +274,8 @@ public final class MainActivity extends Activity {
 		super.onDestroy();
 	}
 
+	
+	
 	private final SeekBar.OnSeekBarChangeListener mOnSeekBarChangeListener = new OnSeekBarChangeListener() {
 		
 		@Override
@@ -261,6 +287,16 @@ public final class MainActivity extends Activity {
 		@Override
 		public void onStartTrackingTouch(SeekBar seekBar) {
 			// TODO Auto-generated method stub
+/*			switch(seekBar.getId())
+			{
+			case R.id.seekBar_Speed:
+				if( mSpeedCheckBox.isChecked() == true )
+				{
+					return;
+				}
+				break;
+			}
+			return;*/
 			
 		}
 		
@@ -310,11 +346,13 @@ public final class MainActivity extends Activity {
 			case R.id.checkBox_Speed:
 				if( isChecked == true )
 				{
-					mSpeedSeekBar.setEnabled(true);
+					mSpeedSeekBar.setProgress(10);
+					mSpeedSeekBar.setEnabled(false);
+					//mSpeedSeekBar.setEnabled(true);
 				}
 				else
 				{
-					mSpeedSeekBar.setEnabled(false);
+					mSpeedSeekBar.setEnabled(true);
 				}
 				break;				
 			}

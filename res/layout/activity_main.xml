@@ -29,7 +29,7 @@
     android:id="@+id/RelativeLayout1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#ff000000"
+    android:background="#ffffffff"
     tools:context="com.serenegiant.usbcameratest3.MainActivity"
     tools:ignore="MergeRootFrame" >
 
@@ -37,7 +37,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:baselineAligned="false"
-        android:layout_centerInParent="true" >
+        android:layout_centerInParent="true"
+        android:background="#ffffffff" >
 		
         <RelativeLayout
 	        android:id="@+id/camera_layout_L"
@@ -60,9 +61,8 @@
                 android:layout_alignLeft="@+id/camera_view_L"
                 android:layout_alignRight="@+id/camera_view_L"
                 android:layout_alignTop="@+id/camera_view_L"
-                android:background="@color/WHITE"
-                android:src="@drawable/border" />
-
+                android:src="@drawable/border"
+                android:background="#ffffffff" />
         </RelativeLayout>
 
 
@@ -74,102 +74,155 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:text="ToggleButton" />     
+        android:text="ToggleButton"/>
+     <RelativeLayout
+		android:id="@+id/RelativeLayout_UI"
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:layout_weight="1"
+		android:background="#00ffffff" >
 
-    <RelativeLayout
-        android:id="@+id/RelativeLayout_UI"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:background="@color/WHITE" >
+		<SeekBar
+	        android:id="@+id/seekBar_Volume"
+	        android:layout_marginTop="80dp"
+            android:layout_marginLeft="120dp"
+            android:layout_width="200dp"
+            android:layout_height="30dp" />
+<!-- 
+		<TextView
+		    android:id="@+id/textView_VolumeValue"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:layout_alignParentLeft="true"
+		    android:layout_alignParentTop="true"
+		    android:layout_marginLeft="100dp"
+		    android:layout_marginTop="120dp"
+		    android:text="0"
+		    android:textColor="@color/BLACK"
+		    android:textSize="@android:dimen/app_icon_size" />
+ -->
+        
+         <SeekBar
+            android:id="@+id/seekBar_Speed"
+            android:layout_marginTop="150dp"
+            android:layout_marginLeft="120dp"
+            android:layout_width="200dp"
+            android:layout_height="30dp"
+            android:textColor="@color/BLACK"
+       		 />
+         
+         <TextView
+             android:id="@+id/textView_SpeedValue"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
+             android:layout_alignParentTop="true"
+             android:layout_marginLeft="330dp"
+             android:layout_marginTop="150dp"
+             android:text="0"
+             android:textColor="@color/BLACK"
+             android:textSize="30sp" />
+         
+         <TextView
+             android:id="@+id/textView_SpeedValueKM"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
+             android:layout_alignParentTop="true"
+             android:layout_marginLeft="320dp"
+             android:layout_marginTop="185dp"
+             android:text="Km/h"
+             android:textColor="@color/BLACK"
+             android:textSize="20sp" />
+
+      	 <TextView
+      	     android:id="@+id/textView_Sensitivity"
+      	     android:layout_width="wrap_content"
+      	     android:layout_height="wrap_content"
+      	     android:layout_marginLeft="10dp"
+      	     android:layout_alignBottom="@+id/seekBar_Sensitivity"
+      	     android:layout_alignParentLeft="true"
+      	     android:text="민감도"
+      	     android:textAppearance="?android:attr/textAppearance"
+      	     android:textColor="@color/BLACK"
+      	     android:textSize="20sp" />
+
+         <SeekBar
+            android:id="@+id/seekBar_Sensitivity"
+            android:layout_marginTop="300dp"
+            android:layout_marginLeft="120dp"
+            android:layout_width="200dp"
+            android:layout_height="30dp"
+       		 />
+ <!--       
+         <TextView
+             android:id="@+id/textView_SensitivityValue"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_alignParentLeft="true"
+             android:layout_alignParentTop="true"
+             android:layout_marginLeft="300dp"
+             android:layout_marginTop="315dp"
+             android:text="0"
+             android:textColor="@color/BLACK"
+             android:textSize="@android:dimen/app_icon_size" />
+ -->  		
+ <!--       <CheckBox
+            android:id="@+id/checkBox_Sensitivity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="320dp"
+            android:text="Sensitivity"
+            android:textColor="@color/BLACK" />
+ -->
+
+        <CheckBox
+            android:id="@+id/checkBox_Speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30dp"
+            android:layout_marginTop="190dp"
+            android:text="10 Km/h"
+            android:textColor="@color/BLACK"
+            android:textSize="20sp" />
 
         <TextView
             android:id="@+id/textView_Volume"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/checkBox_Sound"
-            android:layout_alignLeft="@+id/textView_Speed"
-            android:text="Volume"
-            android:textColor="@color/BLACK" />
-        
+            android:layout_alignBottom="@+id/seekBar_Volume"
+            android:layout_marginLeft="10dp"
+            android:text="소리"
+            android:textAppearance="?android:attr/textAppearance"
+            android:textColor="@color/BLACK"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/textView_Speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_alignBottom="@+id/seekBar_Speed"
+            android:text="속도제한"
+            android:textAppearance="?android:attr/textAppearance"
+            android:textColor="@color/BLACK" 
+            android:textSize="20sp" />
+
         <CheckBox
             android:id="@+id/checkBox_Sound"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@+id/seekBar_Volume"
-            android:layout_toLeftOf="@+id/seekBar_Volume"
-            android:text="Mute"
-            android:textColor="@color/BLACK" />
+            android:layout_marginLeft="30dp"
+            android:layout_marginTop="115dp"
+            android:text="음소거"
+            android:textColor="@color/BLACK"
+            android:textSize="20sp" />
+	  
+     </RelativeLayout>
         
-         <EditText
-            android:id="@+id/editText_Debug"
-            android:layout_width="300dp"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_marginBottom="44dp"
-            android:ems="10" />
-
-         <CheckBox
-             android:id="@+id/checkBox_Speed"
-             android:layout_width="wrap_content"
-             android:layout_height="wrap_content"
-             android:layout_alignLeft="@+id/checkBox_Sound"
-             android:layout_centerVertical="true"
-             android:text="10Km/h"
-             android:textColor="@color/BLACK" />
-
-         <TextView
-             android:id="@+id/textView_Speed"
-             android:layout_width="wrap_content"
-             android:layout_height="wrap_content"
-             android:layout_above="@+id/checkBox_Speed"
-             android:layout_alignLeft="@+id/TextView_Sensitivity"
-             android:text="Speed"
-             android:textColor="@color/BLACK" />
-
-         <SeekBar
-             android:id="@+id/seekBar_Volume"
-             android:layout_width="120dp"
-             android:layout_height="wrap_content"
-             android:layout_above="@+id/textView_Speed"
-             android:layout_alignLeft="@+id/seekBar_Speed"
-             android:layout_centerHorizontal="true" />
-
-         <TextView
-             android:id="@+id/TextView_Sensitivity"
-             android:layout_width="wrap_content"
-             android:layout_height="wrap_content"
-             android:layout_above="@+id/editText_Debug"
-             android:layout_alignLeft="@+id/checkBox_Speed"
-             android:layout_marginBottom="55dp"
-             android:text="Sensitivity"
-             android:textColor="@color/BLACK" />
-
-         <SeekBar
-             android:id="@+id/seekBar_Speed"
-             android:layout_width="120dp"
-             android:layout_height="wrap_content"
-             android:layout_alignTop="@+id/textView_Speed" 
-             android:layout_centerHorizontal="true"/>
-
-         <SeekBar
-             android:id="@+id/seekBar_Sensitivity"
-             android:layout_width="120dp"
-             android:layout_height="wrap_content"
-             android:layout_alignTop="@+id/TextView_Sensitivity"
-             android:layout_centerHorizontal="true" />
-
-         <TextView
-             android:id="@+id/textView_SpeedValue"
-             android:layout_width="wrap_content"
-             android:layout_height="wrap_content"
-             android:layout_below="@+id/checkBox_Speed"
-             android:layout_toRightOf="@+id/textView_Volume"
-             android:text="0"
-             android:textColor="@color/BLACK"
-             android:textSize="@android:dimen/app_icon_size" />
-                 
-    </RelativeLayout>
         
     <ImageButton
         android:id="@+id/capture_button"
@@ -178,7 +231,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="6dp"
-        android:background="@null"
+        android:background="#FF000000"
         android:scaleType="centerCrop"
         android:src="@android:drawable/ic_menu_camera" />
 
